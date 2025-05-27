@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cryzhen Obfuscate - Mã hóa Lua Script</title>
+
 <style>
   body {
     background: #1e1e2f;
@@ -16,17 +17,12 @@
     margin-bottom: 10px;
     color: #4fc3f7;
   }
-  textarea {
-    width: 100%;
-    height: 150px;
-    font-family: monospace;
-    font-size: 14px;
-    padding: 10px;
+  #editor {
+    height: 250px;
     border-radius: 8px;
-    border: none;
-    background: #2b2b3f;
-    color: #ccc;
-    resize: vertical;
+    overflow: hidden;
+    border: 1px solid #444466;
+    margin-bottom: 10px;
   }
   .buttons {
     margin: 15px 0;
@@ -43,7 +39,7 @@
     font-weight: bold;
     cursor: pointer;
     flex: 1;
-    min-width: 120px;
+    min-width: 130px;
     transition: background-color 0.3s;
   }
   button:hover:not(:disabled) {
@@ -115,12 +111,16 @@
     transition: width 0.3s;
   }
 </style>
+
+<!-- Load Monaco Editor CDN -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
+
 </head>
 <body>
 
 <h1>Cryzhen Obfuscate - Mã hóa Lua Script</h1>
 
-<textarea id="luaInput" placeholder="Nhập mã Lua của bạn vào đây..."></textarea>
+<div id="editor"></div>
 
 <div id="captchaSection">
   <label id="captchaLabel" style="font-weight: bold; font-size: 18px;">Loading captcha...</label>
@@ -158,7 +158,28 @@
     }
   });
 
-  const luaInput = document.getElementById('luaInput');
+  // Monaco Editor init
+  require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
+  let editor;
+  require(['vs/editor/editor.main'], function() {
+    editor = monaco.editor.create(document.getElementById('editor'), {
+      value: "-- Nhập mã Lua của bạn tại đây\n",
+      language: 'lua',
+      theme: 'vs-dark',
+      automaticLayout: true,
+      minimap: { enabled: false },
+      fontSize: 14,
+      fontFamily: 'Consolas, monospace',
+      lineNumbers: 'on',
+      roundedSelection: true,
+      scrollBeyondLastLine: false,
+      wordWrap: 'on',
+      tabSize: 2,
+      tabCompletion: 'on',
+      cursorBlinking: 'smooth',
+    });
+  });
+
   const captchaLabel = document.getElementById('captchaLabel');
   const captchaInput = document.getElementById('captchaInput');
   const verifyCaptchaBtn = document.getElementById('verifyCaptchaBtn');
@@ -226,20 +247,18 @@
     return new Promise((resolve) => {
       progressBarContainer.style.display = 'block';
       progressBar.style.width = '0%';
-      let start = null;
-      function step(timestamp) {
-        if (!start) start = timestamp;
-        const elapsed = timestamp - start;
-        const progress = Math.min(elapsed / duration, 1);
-        progressBar.style.width = (progress * 100) + '%';
-        if (elapsed < duration) {
-          requestAnimationFrame(step);
-        } else {
+      let startTime = Date.now();
+      function step() {
+        let elapsed = Date.now() - startTime;
+        let percent = Math.min((elapsed / duration) * 100, 100);
+        progressBar.style.width = percent + '%';
+        if (percent < 100) requestAnimationFrame(step);
+        else {
           progressBarContainer.style.display = 'none';
           resolve();
         }
       }
-      requestAnimationFrame(step);
+      step();
     });
   }
 
@@ -253,7 +272,6 @@
     generateCaptcha();
   }
 
-  // Xử lý nút xác nhận captcha
   verifyCaptchaBtn.addEventListener('click', () => {
     const answer = parseInt(captchaInput.value, 10);
     if (answer === correctAnswer) {
@@ -271,7 +289,7 @@
   });
 
   obfuscateLightBtn.addEventListener('click', async () => {
-    const code = luaInput.value.trim();
+    const code = editor.getValue().trim();
     if (!code) {
       statusMsg.textContent = 'Vui lòng nhập mã Lua trước khi mã hóa.';
       return;
@@ -285,7 +303,7 @@
   });
 
   obfuscateStrongBtn.addEventListener('click', async () => {
-    const code = luaInput.value.trim();
+    const code = editor.getValue().trim();
     if (!code) {
       statusMsg.textContent = 'Vui lòng nhập mã Lua trước khi mã hóa.';
       return;
@@ -306,9 +324,6 @@
     });
   });
 
-  // Khởi tạo captcha lần đầu
-  resetUI();
-
   // Chặn Ctrl+S (Lưu trang)
   window.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.key.toLowerCase() === 's') {
@@ -316,6 +331,10 @@
       alert('Chức năng lưu trang đã bị vô hiệu hóa.');
     }
   });
+
+  // Khởi tạo captcha lần đầu
+  resetUI();
+
 </script>
 
 </body>
