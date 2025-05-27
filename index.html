@@ -146,6 +146,18 @@
 </section>
 
 <script>
+  // Chống mở DevTools bằng phím
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'C', 'J'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && e.key.toUpperCase() === 'U')
+    ) {
+      e.preventDefault();
+      alert('Chức năng này đã bị vô hiệu hóa.');
+    }
+  });
+
   const luaInput = document.getElementById('luaInput');
   const captchaLabel = document.getElementById('captchaLabel');
   const captchaInput = document.getElementById('captchaInput');
@@ -161,7 +173,6 @@
 
   let correctAnswer = 0;
 
-  // Tạo captcha phép cộng đơn giản
   function generateCaptcha() {
     const a = Math.floor(Math.random() * 10) + 1;
     const b = Math.floor(Math.random() * 10) + 1;
@@ -169,17 +180,15 @@
     captchaLabel.textContent = `Captcha: ${a} + ${b} = ?`;
   }
 
-  // Hàm minify Lua đơn giản: bỏ comment, bỏ dòng trống, bỏ khoảng trắng thừa
   function minifyLua(code) {
     return code
-      .replace(/--.*$/gm, '') // bỏ comment
-      .replace(/\n\s*\n/g, '\n') // bỏ dòng trống liên tiếp
-      .replace(/^\s+|\s+$/gm, '') // bỏ khoảng trắng đầu cuối dòng
-      .replace(/\s+/g, ' ') // gộp khoảng trắng nhiều thành 1 space
+      .replace(/--.*$/gm, '') 
+      .replace(/\n\s*\n/g, '\n') 
+      .replace(/^\s+|\s+$/gm, '') 
+      .replace(/\s+/g, ' ') 
       .trim();
   }
 
-  // Thêm junk code random (comment, khai báo biến giả) vào code
   function addJunkCode(code) {
     const junkComments = [
       '-- junk comment ' + Math.random().toString(36).slice(2, 8),
@@ -194,7 +203,6 @@
     return code.slice(0, insertPos) + ' ' + commentToAdd + ' ' + code.slice(insertPos);
   }
 
-  // Mã hóa base64 cho chuỗi UTF-8
   function base64Encode(str) {
     try {
       return btoa(unescape(encodeURIComponent(str)));
@@ -203,12 +211,10 @@
     }
   }
 
-  // Hàm obfuscate mã hóa nhẹ (chỉ minify)
   function obfuscateLight(code) {
     return minifyLua(code);
   }
 
-  // Hàm obfuscate mã hóa mạnh (minify + base64 + junk code + loadstring)
   function obfuscateStrong(code) {
     let minified = minifyLua(code);
     let withJunk = addJunkCode(minified);
@@ -216,7 +222,6 @@
     return `local decode = function(str) return (game:GetService("HttpService"):Base64Decode(str)) end\nlocal code = decode("${encoded}")\nloadstring(code)()`;
   }
 
-  // Thanh tiến trình giả lập
   function simulateLoading(duration = 2000) {
     return new Promise((resolve) => {
       progressBarContainer.style.display = 'block';
@@ -238,27 +243,33 @@
     });
   }
 
-  // Xử lý xác nhận captcha
+  function resetUI() {
+    resultSection.style.display = 'none';
+    resultText.textContent = '';
+    statusMsg.textContent = '';
+    obfuscateLightBtn.disabled = true;
+    obfuscateStrongBtn.disabled = true;
+    captchaInput.value = '';
+    generateCaptcha();
+  }
+
+  // Xử lý nút xác nhận captcha
   verifyCaptchaBtn.addEventListener('click', () => {
-    const userInput = captchaInput.value.trim();
-    if (userInput === '') {
-      statusMsg.textContent = 'Vui lòng nhập đáp án captcha.';
-      return;
-    }
-    if (parseInt(userInput, 10) === correctAnswer) {
-      statusMsg.textContent = 'Captcha đúng! Bạn có thể mã hóa code.';
-      verifyCaptchaBtn.disabled = true;
-      captchaInput.disabled = true;
+    const answer = parseInt(captchaInput.value, 10);
+    if (answer === correctAnswer) {
+      statusMsg.textContent = 'Captcha hợp lệ. Bạn có thể mã hóa!';
       obfuscateLightBtn.disabled = false;
       obfuscateStrongBtn.disabled = false;
     } else {
-      statusMsg.textContent = 'Captcha sai. Vui lòng thử lại.';
+      statusMsg.textContent = 'Captcha sai! Vui lòng thử lại.';
+      obfuscateLightBtn.disabled = true;
+      obfuscateStrongBtn.disabled = true;
+      generateCaptcha();
       captchaInput.value = '';
-      captchaInput.focus();
     }
+    resultSection.style.display = 'none';
   });
 
-  // Xử lý nút mã hóa nhẹ
   obfuscateLightBtn.addEventListener('click', async () => {
     const code = luaInput.value.trim();
     if (!code) {
@@ -273,7 +284,6 @@
     statusMsg.textContent = 'Mã hóa nhẹ hoàn thành.';
   });
 
-  // Xử lý nút mã hóa mạnh
   obfuscateStrongBtn.addEventListener('click', async () => {
     const code = luaInput.value.trim();
     if (!code) {
@@ -288,7 +298,6 @@
     statusMsg.textContent = 'Mã hóa mạnh hoàn thành.';
   });
 
-  // Nút copy kết quả
   copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(resultText.textContent).then(() => {
       statusMsg.textContent = 'Đã sao chép kết quả vào clipboard.';
@@ -298,7 +307,15 @@
   });
 
   // Khởi tạo captcha lần đầu
-  generateCaptcha();
+  resetUI();
+
+  // Chặn Ctrl+S (Lưu trang)
+  window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      alert('Chức năng lưu trang đã bị vô hiệu hóa.');
+    }
+  });
 </script>
 
 </body>
