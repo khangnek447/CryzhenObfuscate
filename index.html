@@ -1,24 +1,255 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Lua Obfuscator Cryzhen</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cryzhen Obfuscate</title>
+<style>
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh;
+  }
+  header {
+    margin: 20px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ff5722;
+  }
+  textarea {
+    width: 90vw;
+    max-width: 800px;
+    height: 200px;
+    background: #222;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    resize: vertical;
+    box-shadow: 0 0 8px #ff5722aa;
+  }
+  textarea::placeholder {
+    color: #888;
+  }
+  button {
+    margin-top: 15px;
+    background: #ff5722;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 30px;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 0 15px #ff5722aa;
+    transition: background 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background: #e64a19;
+  }
+  button:disabled {
+    background: #555;
+    cursor: not-allowed;
+  }
+  #result {
+    margin-top: 25px;
+    width: 90vw;
+    max-width: 800px;
+    min-height: 150px;
+    background: #222;
+    border-radius: 10px;
+    color: #0f0;
+    font-family: 'Courier New', monospace;
+    padding: 15px;
+    white-space: pre-wrap;
+    box-shadow: 0 0 12px #0f0a;
+    position: relative;
+  }
+  #copyBtn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #ff5722;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+  }
+  #copyBtn:hover {
+    opacity: 1;
+  }
+  #captchaSection {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1rem;
+  }
+  #captchaQuestion {
+    font-weight: bold;
+    color: #ffa726;
+  }
+  #captchaInput {
+    width: 60px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+    text-align: center;
+  }
+  #statusMsg {
+    margin-top: 15px;
+    min-height: 20px;
+    color: #ff5722;
+    font-weight: bold;
+  }
+</style>
 </head>
-<body oncontextmenu="return false" onkeydown="return event.keyCode !== 123" onmousedown="return false">
-  <div class="container">
-    <h1>🔒 Lua Script Obfuscator - Cryzhen</h1>
-    
-    <textarea id="input" placeholder="Nhập Lua Script..."></textarea>
-    
-    <label>Nhập mã xác minh: <b>CRYZHEN</b></label>
-    <input type="text" id="captcha" placeholder="Nhập đúng mã bên trên">
+<body>
 
-    <button onclick="sendToBackend()">Obfuscate</button>
+<header>Cryzhen Obfuscate - Lua Script</header>
 
-    <pre id="output" readonly>Obfuscated script sẽ hiển thị ở đây...</pre>
-    <button onclick="copyOutput()">📋 Copy kết quả</button>
-  </div>
+<textarea id="luaInput" placeholder="Nhập code Lua của bạn vào đây..."></textarea>
+
+<div id="captchaSection">
+  <div id="captchaQuestion">?</div>
+  <input type="text" id="captchaInput" placeholder="?" autocomplete="off" />
+  <button id="verifyCaptchaBtn">Xác nhận</button>
+</div>
+
+<button id="obfuscateBtn" disabled>Obfuscate</button>
+
+<div id="result" style="display:none; position: relative;">
+  <button id="copyBtn">Copy</button>
+  <pre id="resultText"></pre>
+</div>
+
+<div id="statusMsg"></div>
+
+<script>
+  const luaInput = document.getElementById("luaInput");
+  const obfuscateBtn = document.getElementById("obfuscateBtn");
+  const result = document.getElementById("result");
+  const resultText = document.getElementById("resultText");
+  const copyBtn = document.getElementById("copyBtn");
+  const captchaQuestion = document.getElementById("captchaQuestion");
+  const captchaInput = document.getElementById("captchaInput");
+  const verifyCaptchaBtn = document.getElementById("verifyCaptchaBtn");
+  const statusMsg = document.getElementById("statusMsg");
+
+  let correctAnswer = null;
+
+  // Tạo câu hỏi captcha dạng toán đơn giản
+  function generateCaptcha() {
+    let a = Math.floor(Math.random() * 10) + 1;
+    let b = Math.floor(Math.random() * 10) + 1;
+    correctAnswer = a + b;
+    captchaQuestion.textContent = `${a} + ${b} = ?`;
+  }
+
+  function minifyLua(code) {
+    // Bỏ comment -- và --[[ ]]
+    code = code.replace(/--\[\[[\s\S]*?\]\]/g, "");
+    code = code.replace(/--.*$/gm, "");
+    // Bỏ dòng trống, khoảng trắng thừa
+    code = code.split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join(" ");
+    return code;
+  }
+
+  function addJunkCode(code) {
+    // Thêm các dòng comment rác ngẫu nhiên
+    let junkLines = [];
+    const junkCount = 3;
+    const junkSamples = [
+      "-- random junk code",
+      "-- obfuscate by Cryzhen",
+      "-- do not decode",
+      "-- code protected",
+      "-- ignore this line"
+    ];
+    for (let i=0; i<junkCount; i++) {
+      let idx = Math.floor(Math.random() * junkSamples.length);
+      junkLines.push(junkSamples[idx]);
+    }
+    return junkLines.join("\n") + "\n" + code;
+  }
+
+  function obfuscate(code) {
+    let minified = minifyLua(code);
+    let withJunk = addJunkCode(minified);
+    // Mã hóa base64 đơn giản (chỉ ví dụ)
+    return btoa(withJunk);
+  }
+
+  verifyCaptchaBtn.addEventListener("click", () => {
+    let answer = captchaInput.value.trim();
+    if (answer === "") {
+      statusMsg.textContent = "Vui lòng nhập đáp án captcha.";
+      return;
+    }
+    if (parseInt(answer) === correctAnswer) {
+      statusMsg.style.color = "#4caf50";
+      statusMsg.textContent = "Captcha hợp lệ! Bạn có thể Obfuscate.";
+      obfuscateBtn.disabled = false;
+      verifyCaptchaBtn.disabled = true;
+      captchaInput.disabled = true;
+    } else {
+      statusMsg.style.color = "#f44336";
+      statusMsg.textContent = "Captcha sai, vui lòng thử lại.";
+      obfuscateBtn.disabled = true;
+    }
+  });
+
+  obfuscateBtn.addEventListener("click", () => {
+    const code = luaInput.value.trim();
+    if (code.length === 0) {
+      statusMsg.style.color = "#f44336";
+      statusMsg.textContent = "Vui lòng nhập code Lua trước khi obfuscate.";
+      return;
+    }
+    statusMsg.textContent = "";
+    const obfuscated = obfuscate(code);
+    result.style.display = "block";
+    resultText.textContent = obfuscated;
+  });
+
+  copyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(resultText.textContent)
+      .then(() => {
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+        }, 1500);
+      });
+  });
+
+  // Khởi tạo captcha lúc load trang
+  generateCaptcha();
+
+  // Chặn chuột phải + Ctrl+S, Ctrl+U, Ctrl+C
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey && (e.key === "s" || e.key === "S")) || 
+        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
+        (e.ctrlKey && (e.key === "c" || e.key === "C"))) {
+      e.preventDefault();
+      alert("Chức năng này bị vô hiệu hóa.");
+    }
+  });
+  window.addEventListener("contextmenu", e => e.preventDefault());
+
+</script>
+
 </body>
 </html>
