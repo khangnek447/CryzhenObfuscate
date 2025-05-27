@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lua Obfuscator Cryzhen</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body oncontextmenu="return false" onkeydown="return event.keyCode !== 123" onmousedown="return false">
+  <div class="container">
+    <h1>🔒 Lua Script Obfuscator - Cryzhen</h1>
+    
+    <textarea id="input" placeholder="Nhập Lua Script..."></textarea>
+    
+    <label>Nhập mã xác minh: <b>CRYZHEN</b></label>
+    <input type="text" id="captcha" placeholder="Nhập đúng mã bên trên">
+
+    <button onclick="sendToBackend()">Obfuscate</button>
+
+    <pre id="output" readonly>Obfuscated script sẽ hiển thị ở đây...</pre>
+    <button onclick="copyOutput()">📋 Copy kết quả</button>
+  </div>
+</body>
+</html>
