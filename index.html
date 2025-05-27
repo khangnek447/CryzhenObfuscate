@@ -3,252 +3,302 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Cryzhen Obfuscate</title>
+<title>Cryzhen Obfuscate - Mã hóa Lua Script</title>
 <style>
   body {
-    background: #121212;
+    background: #1e1e2f;
     color: #eee;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0; padding: 0;
-    display: flex; flex-direction: column; align-items: center;
-    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 20px;
   }
-  header {
-    margin: 20px;
-    font-size: 2rem;
-    font-weight: bold;
-    color: #ff5722;
+  h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #4fc3f7;
   }
   textarea {
-    width: 90vw;
-    max-width: 800px;
-    height: 200px;
-    background: #222;
+    width: 100%;
+    height: 150px;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px;
+    border-radius: 8px;
     border: none;
-    border-radius: 10px;
-    color: #fff;
-    padding: 15px;
-    font-family: 'Courier New', monospace;
-    font-size: 1.1rem;
+    background: #2b2b3f;
+    color: #ccc;
     resize: vertical;
-    box-shadow: 0 0 8px #ff5722aa;
   }
-  textarea::placeholder {
-    color: #888;
+  .buttons {
+    margin: 15px 0;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
   }
   button {
-    margin-top: 15px;
-    background: #ff5722;
+    padding: 10px 18px;
     border: none;
     border-radius: 8px;
-    padding: 15px 30px;
-    color: white;
-    font-size: 1.2rem;
+    background: #4fc3f7;
+    color: #1e1e2f;
+    font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 0 15px #ff5722aa;
-    transition: background 0.3s ease;
+    flex: 1;
+    min-width: 120px;
+    transition: background-color 0.3s;
   }
   button:hover:not(:disabled) {
-    background: #e64a19;
+    background: #3a9ad9;
   }
   button:disabled {
-    background: #555;
-    cursor: not-allowed;
-  }
-  #result {
-    margin-top: 25px;
-    width: 90vw;
-    max-width: 800px;
-    min-height: 150px;
-    background: #222;
-    border-radius: 10px;
-    color: #0f0;
-    font-family: 'Courier New', monospace;
-    padding: 15px;
-    white-space: pre-wrap;
-    box-shadow: 0 0 12px #0f0a;
-    position: relative;
-  }
-  #copyBtn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: #ff5722;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 0.9rem;
-    opacity: 0.85;
-    transition: opacity 0.3s ease;
-  }
-  #copyBtn:hover {
-    opacity: 1;
+    background: #888;
+    cursor: default;
   }
   #captchaSection {
-    margin-top: 20px;
+    margin: 15px 0;
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 1rem;
-  }
-  #captchaQuestion {
-    font-weight: bold;
-    color: #ffa726;
+    gap: 10px;
   }
   #captchaInput {
-    width: 60px;
+    width: 80px;
     padding: 6px 10px;
     border-radius: 6px;
     border: none;
-    font-size: 1rem;
+    background: #2b2b3f;
+    color: #eee;
+    font-weight: bold;
+    font-size: 16px;
     text-align: center;
   }
   #statusMsg {
+    margin-top: 10px;
+    min-height: 22px;
+    font-weight: 600;
+    color: #ffc107;
+  }
+  #resultSection {
+    margin-top: 20px;
+    display: none;
+  }
+  #resultText {
+    width: 100%;
+    height: 180px;
+    background: #23233b;
+    color: #80deea;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 12px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    user-select: text;
+  }
+  #copyBtn {
+    margin-top: 8px;
+    background: #00bfa5;
+    color: white;
+    border-radius: 6px;
+  }
+  #progressBarContainer {
+    width: 100%;
+    background: #33334d;
+    border-radius: 10px;
+    height: 10px;
     margin-top: 15px;
-    min-height: 20px;
-    color: #ff5722;
-    font-weight: bold;
+    display: none;
+  }
+  #progressBar {
+    height: 10px;
+    width: 0%;
+    background: #4fc3f7;
+    border-radius: 10px;
+    transition: width 0.3s;
   }
 </style>
 </head>
 <body>
 
-<header>Cryzhen Obfuscate - Lua Script</header>
+<h1>Cryzhen Obfuscate - Mã hóa Lua Script</h1>
 
-<textarea id="luaInput" placeholder="Nhập code Lua của bạn vào đây..."></textarea>
+<textarea id="luaInput" placeholder="Nhập mã Lua của bạn vào đây..."></textarea>
 
 <div id="captchaSection">
-  <div id="captchaQuestion">?</div>
-  <input type="text" id="captchaInput" placeholder="?" autocomplete="off" />
-  <button id="verifyCaptchaBtn">Xác nhận</button>
+  <label id="captchaLabel" style="font-weight: bold; font-size: 18px;">Loading captcha...</label>
+  <input type="number" id="captchaInput" placeholder="?" autocomplete="off" />
+  <button id="verifyCaptchaBtn">Xác nhận Captcha</button>
 </div>
 
-<button id="obfuscateBtn" disabled>Obfuscate</button>
+<div class="buttons">
+  <button id="obfuscateLightBtn" disabled>Mã hóa nhẹ (Minify)</button>
+  <button id="obfuscateStrongBtn" disabled>Mã hóa mạnh (Minify + Base64 + Junk)</button>
+</div>
 
-<div id="result" style="display:none; position: relative;">
-  <button id="copyBtn">Copy</button>
-  <pre id="resultText"></pre>
+<div id="progressBarContainer">
+  <div id="progressBar"></div>
 </div>
 
 <div id="statusMsg"></div>
 
+<section id="resultSection">
+  <h2>Kết quả:</h2>
+  <pre id="resultText"></pre>
+  <button id="copyBtn">Copy</button>
+</section>
+
 <script>
-  const luaInput = document.getElementById("luaInput");
-  const obfuscateBtn = document.getElementById("obfuscateBtn");
-  const result = document.getElementById("result");
-  const resultText = document.getElementById("resultText");
-  const copyBtn = document.getElementById("copyBtn");
-  const captchaQuestion = document.getElementById("captchaQuestion");
-  const captchaInput = document.getElementById("captchaInput");
-  const verifyCaptchaBtn = document.getElementById("verifyCaptchaBtn");
-  const statusMsg = document.getElementById("statusMsg");
+  const luaInput = document.getElementById('luaInput');
+  const captchaLabel = document.getElementById('captchaLabel');
+  const captchaInput = document.getElementById('captchaInput');
+  const verifyCaptchaBtn = document.getElementById('verifyCaptchaBtn');
+  const obfuscateLightBtn = document.getElementById('obfuscateLightBtn');
+  const obfuscateStrongBtn = document.getElementById('obfuscateStrongBtn');
+  const resultSection = document.getElementById('resultSection');
+  const resultText = document.getElementById('resultText');
+  const copyBtn = document.getElementById('copyBtn');
+  const progressBarContainer = document.getElementById('progressBarContainer');
+  const progressBar = document.getElementById('progressBar');
+  const statusMsg = document.getElementById('statusMsg');
 
-  let correctAnswer = null;
+  let correctAnswer = 0;
 
-  // Tạo câu hỏi captcha dạng toán đơn giản
+  // Tạo captcha phép cộng đơn giản
   function generateCaptcha() {
-    let a = Math.floor(Math.random() * 10) + 1;
-    let b = Math.floor(Math.random() * 10) + 1;
+    const a = Math.floor(Math.random() * 10) + 1;
+    const b = Math.floor(Math.random() * 10) + 1;
     correctAnswer = a + b;
-    captchaQuestion.textContent = `${a} + ${b} = ?`;
+    captchaLabel.textContent = `Captcha: ${a} + ${b} = ?`;
   }
 
+  // Hàm minify Lua đơn giản: bỏ comment, bỏ dòng trống, bỏ khoảng trắng thừa
   function minifyLua(code) {
-    // Bỏ comment -- và --[[ ]]
-    code = code.replace(/--\[\[[\s\S]*?\]\]/g, "");
-    code = code.replace(/--.*$/gm, "");
-    // Bỏ dòng trống, khoảng trắng thừa
-    code = code.split("\n")
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .join(" ");
-    return code;
+    return code
+      .replace(/--.*$/gm, '') // bỏ comment
+      .replace(/\n\s*\n/g, '\n') // bỏ dòng trống liên tiếp
+      .replace(/^\s+|\s+$/gm, '') // bỏ khoảng trắng đầu cuối dòng
+      .replace(/\s+/g, ' ') // gộp khoảng trắng nhiều thành 1 space
+      .trim();
   }
 
+  // Thêm junk code random (comment, khai báo biến giả) vào code
   function addJunkCode(code) {
-    // Thêm các dòng comment rác ngẫu nhiên
-    let junkLines = [];
-    const junkCount = 3;
-    const junkSamples = [
-      "-- random junk code",
-      "-- obfuscate by Cryzhen",
-      "-- do not decode",
-      "-- code protected",
-      "-- ignore this line"
+    const junkComments = [
+      '-- junk comment ' + Math.random().toString(36).slice(2, 8),
+      '-- lua obfuscator',
+      '-- keep this secret',
+      '-- protected code',
+      '-- random comment ' + Math.floor(Math.random() * 1000),
+      'local junkVar' + Math.floor(Math.random() * 10000) + ' = ' + Math.floor(Math.random() * 1000)
     ];
-    for (let i=0; i<junkCount; i++) {
-      let idx = Math.floor(Math.random() * junkSamples.length);
-      junkLines.push(junkSamples[idx]);
-    }
-    return junkLines.join("\n") + "\n" + code;
+    const insertPos = Math.floor(Math.random() * code.length);
+    const commentToAdd = junkComments[Math.floor(Math.random() * junkComments.length)];
+    return code.slice(0, insertPos) + ' ' + commentToAdd + ' ' + code.slice(insertPos);
   }
 
-  function obfuscate(code) {
+  // Mã hóa base64 cho chuỗi UTF-8
+  function base64Encode(str) {
+    try {
+      return btoa(unescape(encodeURIComponent(str)));
+    } catch {
+      return '';
+    }
+  }
+
+  // Hàm obfuscate mã hóa nhẹ (chỉ minify)
+  function obfuscateLight(code) {
+    return minifyLua(code);
+  }
+
+  // Hàm obfuscate mã hóa mạnh (minify + base64 + junk code + loadstring)
+  function obfuscateStrong(code) {
     let minified = minifyLua(code);
     let withJunk = addJunkCode(minified);
-    // Mã hóa base64 đơn giản (chỉ ví dụ)
-    return btoa(withJunk);
+    const encoded = base64Encode(withJunk);
+    return `local decode = function(str) return (game:GetService("HttpService"):Base64Decode(str)) end\nlocal code = decode("${encoded}")\nloadstring(code)()`;
   }
 
-  verifyCaptchaBtn.addEventListener("click", () => {
-    let answer = captchaInput.value.trim();
-    if (answer === "") {
-      statusMsg.textContent = "Vui lòng nhập đáp án captcha.";
+  // Thanh tiến trình giả lập
+  function simulateLoading(duration = 2000) {
+    return new Promise((resolve) => {
+      progressBarContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      let start = null;
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / duration, 1);
+        progressBar.style.width = (progress * 100) + '%';
+        if (elapsed < duration) {
+          requestAnimationFrame(step);
+        } else {
+          progressBarContainer.style.display = 'none';
+          resolve();
+        }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // Xử lý xác nhận captcha
+  verifyCaptchaBtn.addEventListener('click', () => {
+    const userInput = captchaInput.value.trim();
+    if (userInput === '') {
+      statusMsg.textContent = 'Vui lòng nhập đáp án captcha.';
       return;
     }
-    if (parseInt(answer) === correctAnswer) {
-      statusMsg.style.color = "#4caf50";
-      statusMsg.textContent = "Captcha hợp lệ! Bạn có thể Obfuscate.";
-      obfuscateBtn.disabled = false;
+    if (parseInt(userInput, 10) === correctAnswer) {
+      statusMsg.textContent = 'Captcha đúng! Bạn có thể mã hóa code.';
       verifyCaptchaBtn.disabled = true;
       captchaInput.disabled = true;
+      obfuscateLightBtn.disabled = false;
+      obfuscateStrongBtn.disabled = false;
     } else {
-      statusMsg.style.color = "#f44336";
-      statusMsg.textContent = "Captcha sai, vui lòng thử lại.";
-      obfuscateBtn.disabled = true;
+      statusMsg.textContent = 'Captcha sai. Vui lòng thử lại.';
+      captchaInput.value = '';
+      captchaInput.focus();
     }
   });
 
-  obfuscateBtn.addEventListener("click", () => {
+  // Xử lý nút mã hóa nhẹ
+  obfuscateLightBtn.addEventListener('click', async () => {
     const code = luaInput.value.trim();
-    if (code.length === 0) {
-      statusMsg.style.color = "#f44336";
-      statusMsg.textContent = "Vui lòng nhập code Lua trước khi obfuscate.";
+    if (!code) {
+      statusMsg.textContent = 'Vui lòng nhập mã Lua trước khi mã hóa.';
       return;
     }
-    statusMsg.textContent = "";
-    const obfuscated = obfuscate(code);
-    result.style.display = "block";
-    resultText.textContent = obfuscated;
+    statusMsg.textContent = 'Đang mã hóa (nhẹ)...';
+    await simulateLoading();
+    const result = obfuscateLight(code);
+    resultText.textContent = result;
+    resultSection.style.display = 'block';
+    statusMsg.textContent = 'Mã hóa nhẹ hoàn thành.';
   });
 
-  copyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(resultText.textContent)
-      .then(() => {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => {
-          copyBtn.textContent = "Copy";
-        }, 1500);
-      });
-  });
-
-  // Khởi tạo captcha lúc load trang
-  generateCaptcha();
-
-  // Chặn chuột phải + Ctrl+S, Ctrl+U, Ctrl+C
-  window.addEventListener("keydown", e => {
-    if ((e.ctrlKey && (e.key === "s" || e.key === "S")) || 
-        (e.ctrlKey && (e.key === "u" || e.key === "U")) ||
-        (e.ctrlKey && (e.key === "c" || e.key === "C"))) {
-      e.preventDefault();
-      alert("Chức năng này bị vô hiệu hóa.");
+  // Xử lý nút mã hóa mạnh
+  obfuscateStrongBtn.addEventListener('click', async () => {
+    const code = luaInput.value.trim();
+    if (!code) {
+      statusMsg.textContent = 'Vui lòng nhập mã Lua trước khi mã hóa.';
+      return;
     }
+    statusMsg.textContent = 'Đang mã hóa (mạnh)...';
+    await simulateLoading();
+    const result = obfuscateStrong(code);
+    resultText.textContent = result;
+    resultSection.style.display = 'block';
+    statusMsg.textContent = 'Mã hóa mạnh hoàn thành.';
   });
-  window.addEventListener("contextmenu", e => e.preventDefault());
 
+  // Nút copy kết quả
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(resultText.textContent).then(() => {
+      statusMsg.textContent = 'Đã sao chép kết quả vào clipboard.';
+    }).catch(() => {
+      statusMsg.textContent = 'Lỗi khi sao chép.';
+    });
+  });
+
+  // Khởi tạo captcha lần đầu
+  generateCaptcha();
 </script>
 
 </body>
